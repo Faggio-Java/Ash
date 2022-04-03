@@ -4,38 +4,20 @@ use std::{
         fs::File, ffi::OsString,
         time::Duration,
     };
-    
+
 
 fn main() -> std::io::Result<()> {
-let hostname = File::open("/etc/hostname").unwrap();
-
-let info = Command::new("head")
-    .arg("-1")
-    .stdin(hostname)
-    .output()
-    .expect("Error doing whatever"); 
-
 let kernel = Command::new("uname")
     .arg("-r")
     .output()
     .expect("Error doing whatever"); 
-let os = Command::new("head")
-    .args(["-1", "/etc/os-release"])
-    .output()
-    .expect("Error doing whatever"); 
 
-let uptime = fetch_uptime()?;
-
-println!("       {}@{} ===========================",  os_string("USER"), String::from_utf8_lossy(&info.stdout));
-println!("OS: {}Kernel: {}Uptime: {} days, {} hours \nEnvironment: {} \nShell: {}",
-String::from_utf8_lossy(&os.stdout).replace("NAME=", ""), 
-String::from_utf8_lossy(&kernel.stdout), 
-uptime.0, uptime.1,
-os_string("DESKTOP_SESSION"), 
-os_string("SHELL")
-);
+title();
+fetch_distro();
+fetch_uptime();
+print!("Kernel: {}", String::from_utf8_lossy(&kernel.stdout));
+fetch_desktop();
 fetch_mem();
-println!(" ===========================");
 Ok(())
 }
 
@@ -45,6 +27,29 @@ fn os_string(string: &str) -> String {
         .into_string()
         .unwrap()
 }
+
+fn title() {
+   let info = std::fs::read_to_string("/etc/hostname").unwrap();
+   for line in info.lines() {
+         println!("       {}@{} \n ===========================", os_string("USER"), line);
+   } 
+}
+
+fn fetch_desktop() {
+let desktop = std::env::var_os("DESKTOP_SESSION").unwrap_or(OsString::from("unable to determine.")).into_string().unwrap();
+let shell = std::env::var_os("SHELL").unwrap_or(OsString::from("unable to determine.")).into_string().unwrap();
+println!("Environment: {} \nShell: {}", desktop, shell)
+}
+
+fn fetch_distro() {
+    let info = std::fs::read_to_string("/etc/os-release").unwrap();
+    for line in info.lines() {
+       if line.contains("NAME=") {
+          let pretty = line.replace("NAME=", "");
+          println!("OS: {}", pretty);
+       } 
+    } 
+ }
 
 fn fetch_mem() {
    let meminfo = std::fs::read_to_string("/proc/meminfo").unwrap();
@@ -61,26 +66,26 @@ fn fetch_mem() {
                 let total: u32 = tpretty.parse().expect("Oh No");
                  let mem_total = total / 1000;
                   let mem_used = mem_total - mem_temp;
-               println!("Memory: {}Mb / {}Mb", mem_used, mem_total);
+               println!("Memory: {}Mb / {}Mb \n ===========================", mem_used, mem_total);
             }
          } 
       }
    }   
 }
 
-fn fetch_uptime() -> std::io::Result<(u64, u64)> {
-    let mut file = File::open("/proc/uptime")?;
-    let mut c = String::new();
-     file.read_to_string(&mut c)?;
-    let uptime = Duration::from_secs_f32(
-        c.split_whitespace()
-            .next()
-            .unwrap_or("0")
-            .parse::<f32>()
-            .unwrap_or(0.0),
-    );
-    let d = uptime.as_secs() / 86400;
-    let h = (uptime.as_secs() - d * 86400) / 3600;
-    let m = (uptime.as_secs() - d * 86400 - h * 3600) / 60;
-    Ok((d, h))
+fn fetch_uptime() {
+    let upinfo = std::fs::read_to_string("/proc/uptime").unwrap();
+    for line in upinfo.lines() {
+       let uptime = Duration::from_secs_f32(
+           line.split_whitespace()
+               .next()
+               .unwrap_or("0")
+               .parse::<f32>()
+               .unwrap_or(0.0),
+       );
+       let d = uptime.as_secs() / 86400;
+       let h = (uptime.as_secs() - d * 86400) / 3600;
+       let m = (uptime.as_secs() - d * 86400 - h * 3600) / 60;
+       println!("Uptime: {} days, {} hours, {} minutes", d, h, m)
+    }
 }

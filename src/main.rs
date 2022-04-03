@@ -21,17 +21,11 @@ fetch_mem();
 Ok(())
 }
 
-fn os_string(string: &str) -> String {
-    std::env::var_os(string)
-        .unwrap_or(OsString::from("unable to determine."))
-        .into_string()
-        .unwrap()
-}
-
 fn title() {
    let info = std::fs::read_to_string("/etc/hostname").unwrap();
    for line in info.lines() {
-         println!("       {}@{} \n ===========================", os_string("USER"), line);
+    let user = std::env::var_os("USER").unwrap_or(OsString::from("unable to determine.")).into_string().unwrap();
+         println!("       {}@{} \n ===========================", user, line);
    } 
 }
 

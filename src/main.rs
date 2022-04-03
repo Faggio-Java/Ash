@@ -81,7 +81,7 @@ fn fetch_uptime() -> std::io::Result<(u64, u64)> {
     );
     let d = uptime.as_secs() / 86400;
     let h = (uptime.as_secs() - d * 86400) / 3600;
-    /* Commented out because of overflow issues past 2 days and 6 hours of uptime with this piece will fix later
-      let m = (uptime.as_secs() - h * 12240) / 60;*/
+    let minute = uptime.as_secs() / 60;
+    let m = minute / 60;
     Ok((d, h))
 }

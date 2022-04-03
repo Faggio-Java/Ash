@@ -23,7 +23,7 @@ fetch_distro()?,
 String::from_utf8_lossy(&kernel.stdout),
 uptime.0, uptime.1, uptime.2,
 desktop.0, desktop.1,
-memory.0, memory.1);
+memory.1, memory.0);
  Ok(())
 }
 

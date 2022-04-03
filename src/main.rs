@@ -60,7 +60,7 @@ fn fetch_mem() {
                let tpretty = line.replace("MemTotal:", "").replace("kB", "").replace(" ", ""); 
                 let total: u32 = tpretty.parse().expect("Oh No");
                  let mem_total = total / 1000;
-                  let mem_used = mbt - mem_temp;
+                  let mem_used = mem_total - mem_temp;
                println!("Memory: {}Mb / {}Mb", mem_used, mem_total);
             }
          } 

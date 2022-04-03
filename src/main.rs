@@ -5,6 +5,7 @@ use std::{
         time::Duration,
     };
     
+
 fn main() -> std::io::Result<()> {
 let hostname = File::open("/etc/hostname").unwrap();
 
@@ -34,7 +35,7 @@ os_string("DESKTOP_SESSION"),
 os_string("SHELL")
 );
 fetch_mem();
-
+println!(" ===========================");
 Ok(())
 }
 
@@ -45,23 +46,26 @@ fn os_string(string: &str) -> String {
         .unwrap()
 }
 
-fn fetch_mem() -> std::io::Result<(String, String)> {
-    let text = std::fs::read_to_string("/proc/meminfo").unwrap();
-    let a = "0"; // placeholder variables
-    let b = "0";
-    for line in text.lines() {
-        if line.contains("MemTotal:") {
-            let tpretty = line.replace("MemTotal:", "").replace("kB", "").replace(" ", ""); 
-             let total: u32 = tpretty.parse().expect("Oh No");
-            let mb = total / 1000;
-            println!("Memory: {}Mb", mb);
-        };/* Commented Out For Now
-        if line.contains("MemAvailable:") {
-           let apretty = line.replace("MemAvailable:", "").replace("kB", "").replace(" ", "");
-            println!("Memory Available: {}", apretty);
-        }; */
-}
-Ok((a.to_string(), b.to_string()))
+fn fetch_mem() {
+   let meminfo = std::fs::read_to_string("/proc/meminfo").unwrap();
+   for line in meminfo.lines() {
+      if line.contains("MemAvailable:") {
+         let apretty = line.replace("MemAvailable:", "").replace("kB", "").replace(" ", "");
+          let total: u32 = apretty.parse().expect("Oh No");
+           let mem_temp = total / 1000;
+
+         let text = std::fs::read_to_string("/proc/meminfo").unwrap();
+         for line in text.lines() {
+            if line.contains("MemTotal:") {
+               let tpretty = line.replace("MemTotal:", "").replace("kB", "").replace(" ", ""); 
+                let total: u32 = tpretty.parse().expect("Oh No");
+                 let mem_total = total / 1000;
+                  let mem_used = mbt - mem_temp;
+               println!("Memory: {}Mb / {}Mb", mem_used, mem_total);
+            }
+         } 
+      }
+   }   
 }
 
 fn fetch_uptime() -> std::io::Result<(u64, u64)> {

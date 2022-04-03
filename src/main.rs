@@ -30,9 +30,9 @@ fn title() {
 }
 
 fn fetch_desktop() {
-let desktop = std::env::var_os("DESKTOP_SESSION").unwrap_or(OsString::from("unable to determine.")).into_string().unwrap();
-let shell = std::env::var_os("SHELL").unwrap_or(OsString::from("unable to determine.")).into_string().unwrap();
-println!("Environment: {} \nShell: {}", desktop, shell)
+   let desktop = std::env::var_os("DESKTOP_SESSION").unwrap_or(OsString::from("unable to determine.")).into_string().unwrap();
+   let shell = std::env::var_os("SHELL").unwrap_or(OsString::from("unable to determine.")).into_string().unwrap();
+   println!("Environment: {} \nShell: {}", desktop, shell)
 }
 
 fn fetch_distro() {

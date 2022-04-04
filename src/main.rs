@@ -8,21 +8,26 @@ fn main() -> std::io::Result<()> {
 let kernel = Command::new("uname")
    .arg("-r")
    .output()
-   .expect("Error doing whatever"); 
+   .expect("Error doing stuff"); 
 let title = title()?;
 let uptime = fetch_uptime()?;
 let desktop = fetch_desktop()?;
 let memory = fetch_mem()?;
-   
-println!("       {}@{} =========================== 
-OS: {} \nKernel: {}Uptime: {} days, {} hours, {} minutes
-Environment: {} \nShell: {} \nMemory: {}Mb / {}Mb 
- ===========================", 
+
+print!("       {}@{} =========================== 
+OS: {} 
+Kernel: {}Uptime: {} days, {} hours, {} minutes
+Environment: {} 
+Shell: {} 
+Cpu: {} 
+Memory: {}Mb / {}Mb 
+", 
 title.0, title.1,
 fetch_distro()?,
 String::from_utf8_lossy(&kernel.stdout),
 uptime.0, uptime.1, uptime.2,
 desktop.0, desktop.1,
+fetch_cpu()?,
 memory.1, memory.0);
  Ok(())
 }
@@ -40,8 +45,17 @@ fn fetch_desktop() -> std::io::Result<(String, String)> {
    Ok((desktop, shell))
 }
 
+fn fetch_cpu() -> std::io::Result<String> {
+  let reader = std::fs::read_to_string("/proc/cpuinfo")?;
+   let line = reader.lines().find(|f| f.contains("model name")).unwrap();
+  let output = line.replace("model name", "").replace("CPU", " - ").replace("\t", "").replace(": ", "");
+
+   Ok(output)
+}
+
+
 fn fetch_distro() -> std::io::Result<String> {
-    let reader = std::fs::read_to_string("/etc/os-release").unwrap();
+    let reader = std::fs::read_to_string("/etc/os-release")?;
      let line = reader.lines().find(|f| f.contains("NAME=")).unwrap();
     let output = line.replace("NAME=", "");
   Ok(output)

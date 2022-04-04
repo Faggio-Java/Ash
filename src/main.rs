@@ -8,27 +8,59 @@ fn main() -> std::io::Result<()> {
 let kernel = Command::new("uname")
    .arg("-r")
    .output()
-   .expect("Error doing stuff"); 
+   .expect("Error doing whatever"); 
 let title = title()?;
 let uptime = fetch_uptime()?;
 let desktop = fetch_desktop()?;
 let memory = fetch_mem()?;
+let distro = fetch_distro()?.to_lowercase();
 
+let ascii = match distro {
+   arch => arch,
+   arcolinux => arcolinux,
+   artix =>  artix,
+   centos => centos,
+   crux => crux,
+   debian => debian,
+   fedora => fedora,
+   gentoo => gentoo,
+   manjaro => manjaro,
+   nixos => nixos,
+   opensuse => opensuse,
+   slackware => slackware,
+   void => void,
+   _ => "crux".to_string(),
+};
+
+let path = ascii.replace(&ascii, "ascii/{}").replace("{}", &fetch_distro()?.to_lowercase());
+ let distro_ascii = std::fs::read_to_string(path)?;
+  let line_one = distro_ascii.lines().find(|f| f.contains("1")).unwrap();
+  let line_two = distro_ascii.lines().find(|f| f.contains("2")).unwrap();
+  let line_three = distro_ascii.lines().find(|f| f.contains("3")).unwrap();
+  let line_four = distro_ascii.lines().find(|f| f.contains("4")).unwrap();
+  let line_five = distro_ascii.lines().find(|f| f.contains("5")).unwrap();
+  let line_six = distro_ascii.lines().find(|f| f.contains("6")).unwrap();
+  let line_seven = distro_ascii.lines().find(|f| f.contains("7")).unwrap();
+  let line_eight = distro_ascii.lines().find(|f| f.contains("8")).unwrap(); // im sure there is a better way to do this
+    
 print!("       {}@{} =========================== 
-OS: {} 
-Kernel: {}Uptime: {} days, {} hours, {} minutes
-Environment: {} 
-Shell: {} 
-Cpu: {} 
-Memory: {}Mb / {}Mb 
+{} OS: {} 
+{} Kernel: {}{} Uptime: {} days, {} hours, {} minutes 
+{} Environment: {}
+{} Shell: {} 
+{} Cpu: {} 
+{} Memory: {}Mb / {}Mb 
+{}
 ", 
 title.0, title.1,
-fetch_distro()?,
-String::from_utf8_lossy(&kernel.stdout),
-uptime.0, uptime.1, uptime.2,
-desktop.0, desktop.1,
-fetch_cpu()?,
-memory.1, memory.0);
+line_one, fetch_distro()?,
+line_two, String::from_utf8_lossy(&kernel.stdout),
+line_three, uptime.0, uptime.1, uptime.2,
+line_four, desktop.0, 
+line_five, desktop.1,
+line_six, fetch_cpu()?,
+line_seven, memory.1, memory.0, 
+line_eight);
  Ok(())
 }
 

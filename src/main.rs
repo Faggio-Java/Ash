@@ -3,31 +3,21 @@ use std::{
     time::Duration,
 };
 
-
 fn main() -> std::io::Result<()> {
-let kernel = Command::new("uname")
-   .arg("-r")
-   .output()
-   .expect("Error doing whatever"); 
-let title = title()?;
-let uptime = fetch_uptime()?;
-let desktop = fetch_desktop()?;
-let memory = fetch_mem()?;
-let distro = fetch_distro()?;
+    let kernel = Command::new("uname").arg("-r").output().expect("Error running uname");
+    let title = title()?;
+    let uptime = fetch_uptime()?;
+    let desktop = fetch_desktop()?;
+    let memory = fetch_mem()?;
+    let distro = fetch_distro()?;
 
-let def = "ascii/{}";
- let path = def.replace("{}", &distro.to_lowercase());
-  let distro_ascii = std::fs::read_to_string(path)?;
-  let line_one = distro_ascii.lines().find(|f| f.contains('1')).unwrap();
-  let line_two = distro_ascii.lines().find(|f| f.contains('2')).unwrap();
-  let line_three = distro_ascii.lines().find(|f| f.contains('3')).unwrap();
-  let line_four = distro_ascii.lines().find(|f| f.contains('4')).unwrap();
-  let line_five = distro_ascii.lines().find(|f| f.contains('5')).unwrap();
-  let line_six = distro_ascii.lines().find(|f| f.contains('6')).unwrap();
-  let line_seven = distro_ascii.lines().find(|f| f.contains('7')).unwrap();
-  let line_eight = distro_ascii.lines().find(|f| f.contains('8')).unwrap();
-  
-print!("       {}@{} =========================== 
+    let def = "ascii/{}";
+    let path = def.replace("{}", &distro.to_lowercase());
+    let distro_ascii = std::fs::read_to_string(path)?;
+    let lines = extract_lines(&distro_ascii);
+
+    print!(
+        "       {}@{} =========================== 
 {} OS: {} 
 {} Kernel: {}{} Uptime: {} days, {} hours, {} minutes 
 {} Environment: {}
@@ -35,17 +25,29 @@ print!("       {}@{} ===========================
 {} Cpu: {} 
 {} Memory: {}Mb / {}Mb 
 {}
-", 
-title.0, title.1,
-line_one, distro,
-line_two, String::from_utf8_lossy(&kernel.stdout),
-line_three, uptime.0, uptime.1, uptime.2,
-line_four, desktop.0, 
-line_five, desktop.1,
-line_six, fetch_cpu()?,
-line_seven, memory.1, memory.0, 
-line_eight);
- Ok(())
+",
+        title.0, title.1,
+        lines[0], distro,
+        lines[1], String::from_utf8_lossy(&kernel.stdout),
+        lines[2], uptime.0, uptime.1, uptime.2,
+        lines[3], desktop.0,
+        lines[4], desktop.1,
+        lines[5], fetch_cpu()?,
+        lines[6], memory.1, memory.0,
+        lines[7]
+    );
+    Ok(())
+}
+
+
+fn extract_lines(distro_ascii: &str) -> Vec<String> {
+    let mut lines = Vec::new();
+    for i in 1..=8 {
+        if let Some(line) = distro_ascii.lines().find(|f| f.contains(i.to_string().as_str())) {
+            lines.push(line.to_owned());
+        }
+    }
+    lines
 }
 
 fn title() -> std::io::Result<(String, String)> {
@@ -78,15 +80,24 @@ fn fetch_distro() -> std::io::Result<String> {
 
 fn fetch_mem() -> std::io::Result<(u32, u32)> {
    let meminfo = std::fs::read_to_string("/proc/meminfo").unwrap();
-    let line_one = meminfo.lines().find(|f| f.contains("MemAvailable:")).unwrap();
-     let pretty_one = line_one.replace("MemAvailable:", "").replace(' ', "").replace("kB", "");
-    let line_two = meminfo.lines().find(|f| f.contains("MemTotal:")).unwrap();
-     let pretty_two = line_two.replace("MemTotal:", "").replace(' ', "").replace("kB", "");
-    let total_one: u32 = pretty_one.parse().expect("Error at 52:23");
-     let mem_temp = total_one / 1000;
-    let total_two: u32 = pretty_two.parse().expect("Error at 54:23");
-     let mem_total = total_two / 1000;
-      let mem_used = mem_total - mem_temp;
+
+   let (mem_temp, mem_total) = meminfo
+       .lines()
+       .fold((0, 0), |(mem_temp, mem_total), line| {
+           let mut parts = line.split(":");
+           let key = parts.next().expect("Error").trim();
+           let value = parts.next().expect("Error").trim().replace("kB", "");
+           let value = value.trim().parse().ok().unwrap_or(0);
+
+           match key {
+               "MemAvailable" => (value / 1000, mem_total),
+               "MemTotal" => (mem_temp, value / 1000),
+               _ => (mem_temp, mem_total),
+           }
+       });
+       
+   let mem_used = mem_total - mem_temp;
+   
 Ok((mem_total, mem_used))
 }
 
